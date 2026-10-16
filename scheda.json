@@ -1,0 +1,478 @@
+{
+  "versione": "2026-11-ciclo-1",
+  "titolo": "Ciclo 1",
+  "aggiornata": "2026-10-16",
+  "novita": "Prima scheda del programma vero: tre giornate (Forza, Atleta, Spalle e core) più la corsa della domenica.",
+  "settimaneCiclo": 5,
+  "settimaneTest": [1, 6],
+  "giriPerSettimana": { "1": 2, "2": 2, "3": 3, "4": 3, "5": 3, "6": 2 },
+  "giriDopoIlCiclo": 3,
+  "riposoSecondi": 45,
+
+  "riscaldamento": {
+    "titolo": "Riscaldamento",
+    "durata": "5 minuti, 8-10 quando fa freddo",
+    "voci": [
+      "Saltelli leggeri sul posto o skip: 1 minuto",
+      "Cerchi con le braccia: 10 avanti e 10 indietro",
+      "Rotazioni del busto: 10",
+      "Cerchi con le anche: 10 per lato",
+      "Squat lenti: 10",
+      "Affondi indietro: 5 per gamba"
+    ],
+    "nota": "Con il freddo ripeti tutto una seconda volta. Togli la felpa solo alla fine."
+  },
+  "riscaldamentoBreve": {
+    "titolo": "Riscaldamento breve",
+    "durata": "2 minuti",
+    "voci": [
+      "Saltelli leggeri sul posto: 30 secondi",
+      "Cerchi con le braccia: 10 avanti e 10 indietro",
+      "Squat lenti: 10"
+    ]
+  },
+  "defaticamento": {
+    "titolo": "Defaticamento",
+    "durata": "3 minuti",
+    "voci": [
+      "Polpacci: 20-30 secondi per lato",
+      "Cosce: 20-30 secondi per lato",
+      "Petto contro il muro: 20-30 secondi per lato",
+      "Parte posteriore della spalla (braccio teso davanti al petto, tirato con l'altro braccio): 20-30 secondi per lato"
+    ]
+  },
+
+  "giornate": [
+    {
+      "id": "forza",
+      "nome": "Forza",
+      "giorno": 1,
+      "durata": "circa 30 minuti",
+      "riserva": "1-2",
+      "descrizione": "Il giorno più impegnativo. Il tennis è lontano (giovedì).",
+      "perche": "Coprono tutto il corpo con un esercizio per ogni movimento base (gambe, spinta, tirata, anca). Lo squat bulgaro rende le gambe molto più forti degli squat a corpo libero, che per te diventerebbero presto troppo facili, e lavora su una gamba sola come succede in campo.",
+      "blocchi": [
+        {
+          "coppia": "A",
+          "esercizi": [
+            {
+              "id": "forza-gambe",
+              "etichetta": "A1",
+              "nome": "Gambe",
+              "tipo": "ripetizioni",
+              "min": 8, "max": 12, "perLato": true,
+              "varianti": [
+                { "id": "squat-lento", "nome": "Squat lento (3 secondi a scendere)" },
+                { "id": "affondo-indietro", "nome": "Affondo indietro" },
+                { "id": "squat-bulgaro", "nome": "Squat bulgaro (piede dietro su una sedia o sul divano)" },
+                { "id": "squat-bulgaro-lento", "nome": "Squat bulgaro lento" }
+              ]
+            },
+            {
+              "id": "forza-piegamenti",
+              "etichetta": "A2",
+              "nome": "Piegamenti",
+              "tipo": "ripetizioni",
+              "min": 8, "max": 15,
+              "varianti": [
+                { "id": "piegamenti", "nome": "Piegamenti" },
+                { "id": "piegamenti-lenti", "nome": "Piegamenti lenti (3 secondi a scendere)" },
+                { "id": "piegamenti-piedi-rialzati", "nome": "Piegamenti con i piedi rialzati" },
+                { "id": "piegamenti-piedi-rialzati-lenti", "nome": "Piedi rialzati e lenti" },
+                { "id": "piegamenti-arciere", "nome": "Piegamenti \"arciere\"" }
+              ]
+            }
+          ]
+        },
+        {
+          "coppia": "B",
+          "esercizi": [
+            {
+              "id": "forza-rematore",
+              "etichetta": "B1",
+              "nome": "Rematore",
+              "tipo": "ripetizioni",
+              "min": 10, "max": 15,
+              "elastico": true,
+              "nota": "Con l'elastico: rematore in piedi con l'aggancio alla porta. Quando arrivi al massimo, passa a un elastico più duro.",
+              "varianti": [
+                { "id": "rematore-elastico-1", "nome": "Elastico 1 (il più leggero)" },
+                { "id": "rematore-elastico-2", "nome": "Elastico 2" },
+                { "id": "rematore-elastico-3", "nome": "Elastico 3" },
+                { "id": "rematore-elastico-4", "nome": "Elastico 4" },
+                { "id": "rematore-elastico-5", "nome": "Elastico 5 (il più duro)" }
+              ],
+              "alternative": [
+                { "id": "rematore-tavolo", "nome": "Rematore sotto il tavolo (in casa)" },
+                { "id": "w-a-terra", "nome": "W a terra (in garage)" }
+              ]
+            },
+            {
+              "id": "forza-ponte",
+              "etichetta": "B2",
+              "nome": "Ponte per i glutei",
+              "tipo": "ripetizioni",
+              "min": 10, "max": 15, "perLato": true,
+              "nota": "Nel ponte a due gambe conta le ripetizioni normali.",
+              "varianti": [
+                { "id": "ponte-due-gambe", "nome": "Ponte a due gambe" },
+                { "id": "ponte-una-gamba", "nome": "Ponte su una gamba" },
+                { "id": "ponte-una-gamba-divano", "nome": "Ponte su una gamba con i piedi sul divano" }
+              ]
+            }
+          ]
+        },
+        {
+          "coppia": "Extra",
+          "facoltativo": true,
+          "esercizi": [
+            {
+              "id": "forza-plank",
+              "etichetta": "Extra",
+              "nome": "Plank",
+              "tipo": "tempo",
+              "min": 30, "max": 30,
+              "giriMax": 2,
+              "facoltativo": true,
+              "nota": "Solo se resta tempo.",
+              "varianti": [ { "id": "plank", "nome": "Plank sugli avambracci" } ]
+            }
+          ]
+        }
+      ],
+      "dieciMinuti": ["forza-gambe", "forza-piegamenti", "forza-rematore"]
+    },
+
+    {
+      "id": "atleta",
+      "nome": "Atleta",
+      "giorno": 3,
+      "durata": "circa 30 minuti",
+      "riserva": "2-3",
+      "descrizione": "Carico medio, più vicino al tennis. Il giorno dopo c'è la lezione.",
+      "perche": "A tennis servono gli spostamenti laterali (affondi laterali), la spinta rapida (salti, piegamenti veloci), l'equilibrio su una gamba (stacco) e il busto che trasmette la forza nei colpi (rotazioni). Il carico è medio perché il giorno dopo c'è la lezione.",
+      "blocchi": [
+        {
+          "coppia": "A",
+          "esercizi": [
+            {
+              "id": "atleta-salti",
+              "etichetta": "A",
+              "nome": "Salti",
+              "tipo": "ripetizioni",
+              "min": 5, "max": 5,
+              "riposo": 60,
+              "progressione": false,
+              "nota": "Atterraggio morbido e silenzioso. Riposo completo. Conta la qualità, non la fatica. Con il freddo, solo dopo il riscaldamento completo.",
+              "varianti": [
+                { "id": "salto-lungo", "nome": "Salto in lungo da fermo" },
+                { "id": "squat-jump", "nome": "Squat jump" }
+              ],
+              "alternative": [
+                { "id": "squat-punte", "nome": "Squat con salita veloce sulle punte (in casa, se non c'è spazio o fa rumore)" }
+              ]
+            }
+          ]
+        },
+        {
+          "coppia": "B",
+          "esercizi": [
+            {
+              "id": "atleta-affondi-laterali",
+              "etichetta": "B1",
+              "nome": "Affondi laterali",
+              "tipo": "ripetizioni",
+              "min": 6, "max": 10, "perLato": true,
+              "varianti": [
+                { "id": "affondo-laterale", "nome": "Affondo laterale" },
+                { "id": "affondo-laterale-lento", "nome": "Affondo laterale lento" },
+                { "id": "affondo-laterale-esplosivo", "nome": "Affondo laterale con salita esplosiva" }
+              ]
+            },
+            {
+              "id": "atleta-piegamenti-veloci",
+              "etichetta": "B2",
+              "nome": "Piegamenti veloci",
+              "tipo": "ripetizioni",
+              "min": 5, "max": 8,
+              "nota": "Discesa controllata, salita più veloce possibile.",
+              "varianti": [
+                { "id": "piegamenti-veloci", "nome": "Piegamenti veloci" },
+                { "id": "piegamenti-staccati", "nome": "Con le mani che si staccano da terra" }
+              ]
+            }
+          ]
+        },
+        {
+          "coppia": "C",
+          "esercizi": [
+            {
+              "id": "atleta-stacco",
+              "etichetta": "C1",
+              "nome": "Stacco su una gamba",
+              "tipo": "ripetizioni",
+              "min": 8, "max": 10, "perLato": true,
+              "nota": "Busto in avanti e gamba libera indietro, schiena dritta.",
+              "varianti": [
+                { "id": "stacco-muro", "nome": "Con la mano appoggiata al muro" },
+                { "id": "stacco-libero", "nome": "Libero" },
+                { "id": "stacco-lento", "nome": "Lento" }
+              ]
+            },
+            {
+              "id": "atleta-rotazione",
+              "etichetta": "C2",
+              "nome": "Rotazione e anti-rotazione",
+              "tipo": "ripetizioni",
+              "min": 8, "max": 10, "perLato": true,
+              "elastico": true,
+              "nota": "Pallof press: spingi l'elastico in avanti senza farti girare il busto. Poi rotazione del busto.",
+              "varianti": [
+                { "id": "pallof-rotazione", "nome": "Elastico: Pallof press e rotazione del busto" }
+              ],
+              "alternative": [
+                { "id": "plank-tocco-spalla", "nome": "Plank con tocco della spalla" }
+              ]
+            }
+          ]
+        }
+      ],
+      "dieciMinuti": ["atleta-affondi-laterali", "atleta-stacco", "atleta-rotazione"]
+    },
+
+    {
+      "id": "spalle",
+      "nome": "Spalle e core",
+      "giorno": 5,
+      "durata": "circa 25-30 minuti, leggero",
+      "riserva": "3-4",
+      "descrizione": "Leggero. Il giorno dopo c'è la lezione.",
+      "perche": "A ogni colpo i muscoli dietro la spalla frenano il braccio: rinforzarli è la prevenzione più usata nel tennis. L'addome lavora per tenere il corpo fermo (plank laterale, dead bug), come quando colpisci. Tutto è leggero, per arrivare freschi al sabato.",
+      "blocchi": [
+        {
+          "coppia": "A",
+          "esercizi": [
+            {
+              "id": "spalle-rotazione-esterna",
+              "etichetta": "A1",
+              "nome": "Rotazione esterna della spalla",
+              "tipo": "ripetizioni",
+              "min": 12, "max": 15, "perLato": true, "unitaLato": "per braccio",
+              "elastico": true,
+              "nota": "Gomito attaccato al fianco.",
+              "varianti": [
+                { "id": "rot-est-elastico-1", "nome": "Elastico leggero" },
+                { "id": "rot-est-elastico-2", "nome": "Elastico un po' più duro" }
+              ],
+              "alternative": [
+                { "id": "rot-est-bottiglietta", "nome": "Sdraiato sul fianco, con una bottiglietta d'acqua da mezzo litro" }
+              ]
+            },
+            {
+              "id": "spalle-face-pull",
+              "etichetta": "A2",
+              "nome": "Tirata verso il viso (face pull)",
+              "tipo": "ripetizioni",
+              "min": 12, "max": 15,
+              "elastico": true,
+              "nota": "Elastico all'altezza del viso: tira verso la fronte aprendo i gomiti.",
+              "varianti": [
+                { "id": "face-pull-elastico-1", "nome": "Elastico leggero" },
+                { "id": "face-pull-elastico-2", "nome": "Elastico un po' più duro" }
+              ],
+              "alternative": [
+                { "id": "ytw-terra", "nome": "Y-T-W a terra (8 per lettera)", "min": 8, "max": 8 }
+              ]
+            }
+          ]
+        },
+        {
+          "coppia": "B",
+          "esercizi": [
+            {
+              "id": "spalle-plank-laterale",
+              "etichetta": "B1",
+              "nome": "Plank laterale",
+              "tipo": "tempo",
+              "min": 20, "max": 40, "perLato": true,
+              "varianti": [
+                { "id": "plank-laterale-ginocchia", "nome": "Sulle ginocchia" },
+                { "id": "plank-laterale", "nome": "Normale" },
+                { "id": "plank-laterale-gamba", "nome": "Con la gamba sopra sollevata" }
+              ]
+            },
+            {
+              "id": "spalle-dead-bug",
+              "etichetta": "B2",
+              "nome": "Dead bug",
+              "tipo": "ripetizioni",
+              "min": 8, "max": 8, "perLato": true,
+              "progressione": false,
+              "nota": "Sdraiato sulla schiena, braccio e gamba opposti si allungano lentamente. La schiena resta attaccata a terra.",
+              "varianti": [ { "id": "dead-bug", "nome": "Dead bug" } ]
+            }
+          ]
+        },
+        {
+          "coppia": "C",
+          "esercizi": [
+            {
+              "id": "spalle-superman",
+              "etichetta": "C",
+              "nome": "Superman",
+              "tipo": "ripetizioni",
+              "min": 10, "max": 10,
+              "giriMax": 2,
+              "progressione": false,
+              "nota": "A pancia in giù, braccia e gambe si alzano di qualche cm. 2 secondi di fermo in alto.",
+              "varianti": [ { "id": "superman", "nome": "Superman" } ]
+            }
+          ]
+        }
+      ],
+      "mobilita": {
+        "titolo": "Mobilità",
+        "durata": "5 minuti",
+        "voci": [
+          "Libro aperto (sul fianco, apri il braccio e il busto): 8 per lato",
+          "Allungamento dei flessori dell'anca in affondo: 30 secondi per lato",
+          "Allungamento della parte posteriore della spalla: 30 secondi per lato, senza forzare"
+        ]
+      },
+      "dieciMinuti": ["spalle-rotazione-esterna", "spalle-plank-laterale", "spalle-libro-aperto"],
+      "eserciziExtra": [
+        {
+          "id": "spalle-libro-aperto",
+          "etichetta": "",
+          "nome": "Libro aperto",
+          "tipo": "ripetizioni",
+          "min": 8, "max": 8, "perLato": true,
+          "progressione": false,
+          "nota": "Sul fianco, apri il braccio e il busto.",
+          "varianti": [ { "id": "libro-aperto", "nome": "Libro aperto" } ]
+        }
+      ]
+    }
+  ],
+
+  "corsa": {
+    "id": "corsa",
+    "nome": "Corsa",
+    "giorno": 7,
+    "perche": "La corsa facile costruisce la resistenza di base, che ti fa recuperare meglio tra uno scambio e l'altro. Gli allunghi preparano il corpo agli scatti in sicurezza.",
+    "settimane": {
+      "1": { "testo": "Test: 3 km cronometrati", "test": true },
+      "2": { "testo": "25 minuti facili, a un ritmo in cui riesci a parlare", "minuti": 25, "allunghi": 0 },
+      "3": { "testo": "25 minuti facili + 4 allunghi da 15 secondi, con 1 minuto di camminata tra uno e l'altro", "minuti": 25, "allunghi": 4 },
+      "4": { "testo": "25 minuti facili + 4 allunghi da 15 secondi, con 1 minuto di camminata tra uno e l'altro", "minuti": 25, "allunghi": 4 },
+      "5": { "testo": "30 minuti facili + 6 allunghi da 15 secondi, con 1 minuto di camminata tra uno e l'altro", "minuti": 30, "allunghi": 6 },
+      "6": { "testo": "Test: 3 km cronometrati", "test": true }
+    },
+    "mantenimento": { "testo": "20 minuti facili, senza allunghi", "minuti": 20, "allunghi": 0 },
+    "allungo": "Allungo: accelerazione progressiva fino a un ritmo veloce ma rilassato.",
+    "inverno": "Vestiti a strati, con il primo strato tecnico, e qualche minuto di riscaldamento in casa. Con ghiaccio o pioggia forte: 20 minuti in casa (riscaldamento lungo con saltelli e skip)."
+  },
+
+  "test": {
+    "forza": [
+      { "chiave": "peso", "nome": "Peso", "unita": "kg", "passo": 0.1, "decimali": 1,
+        "istruzioni": "Al mattino, dopo il bagno e prima di colazione, con la stessa bilancia. Se oggi non l'hai misurato, fallo domattina e segnalo dopo." },
+      { "chiave": "giro-vita", "nome": "Giro vita", "unita": "cm", "passo": 0.5, "decimali": 1, "facoltativo": true,
+        "istruzioni": "All'altezza dell'ombelico, senza trattenere la pancia." },
+      { "chiave": "giro-braccio", "nome": "Giro braccio", "unita": "cm", "passo": 0.5, "decimali": 1, "facoltativo": true,
+        "istruzioni": "A metà tra spalla e gomito, braccio rilassato." },
+      { "chiave": "piegamenti-max", "nome": "Piegamenti massimi", "unita": "ripetizioni", "passo": 1,
+        "istruzioni": "Corpo dritto dalla testa ai talloni. Il petto scende fino a circa un pugno da terra, le braccia si distendono del tutto in alto. Finisce quando non riesci più a farne uno eseguito bene. Contano solo quelli eseguiti bene." },
+      { "chiave": "squat-max", "nome": "Squat massimi", "unita": "ripetizioni", "passo": 1,
+        "istruzioni": "Riposa 3 minuti dopo i piegamenti. Piedi alla larghezza delle spalle, talloni a terra, cosce almeno parallele al pavimento, risalita completa. Ritmo regolare, senza fermarti più di 2 secondi in piedi." }
+    ],
+    "atleta": [
+      { "chiave": "salto-lungo", "nome": "Salto in lungo da fermo", "unita": "cm", "passo": 1, "tentativi": 3,
+        "istruzioni": "Piedi dietro una linea, salto a piedi pari usando le braccia. Si misura dalla linea al tallone più vicino alla linea. 3 tentativi con 1 minuto di pausa: vale il migliore." },
+      { "chiave": "rematore-tavolo-max", "nome": "Rematore sotto il tavolo, massimo", "unita": "ripetizioni", "passo": 1,
+        "istruzioni": "In casa. Prima controlla che il tavolo non si muova. Mani sul bordo alla larghezza delle spalle, corpo dritto, talloni a terra. Tira fino a toccare il bordo con il petto, scendi con le braccia tese.",
+        "extra": [ { "chiave": "talloni", "nome": "Dove sono i talloni", "esempio": "es. sotto il bordo opposto" } ] }
+    ],
+    "spalle": [
+      { "chiave": "plank-max", "nome": "Plank massimo", "unita": "s", "passo": 1, "cronometro": true,
+        "istruzioni": "Sugli avambracci, corpo dritto. Finisce quando il bacino scende o sale e non riesci a correggerlo." },
+      { "chiave": "mobilita-spalla-dx", "nome": "Mobilità spalla: mano destra in alto", "unita": "cm", "passo": 0.5, "decimali": 1, "negativo": true,
+        "istruzioni": "Mani dietro la schiena: la mano destra scende da sopra la spalla, la sinistra sale da sotto. Distanza tra le punte delle dita medie: positiva se non si toccano, negativa se si sovrappongono. 2 tentativi, vale il migliore." },
+      { "chiave": "mobilita-spalla-sx", "nome": "Mobilità spalla: mano sinistra in alto", "unita": "cm", "passo": 0.5, "decimali": 1, "negativo": true,
+        "istruzioni": "Come prima, a lati invertiti: la mano sinistra scende da sopra la spalla. Conta soprattutto la differenza tra il braccio che gioca e l'altro.",
+        "extra": [ { "chiave": "braccio", "nome": "Braccio che gioca", "esempio": "destro o sinistro" } ] }
+    ],
+    "corsa": [
+      { "chiave": "3km", "nome": "3 km cronometrati", "unita": "min:s", "tipo": "tempo-gara",
+        "istruzioni": "Stesso percorso ogni volta, se possibile quello della prima uscita. 10 minuti di corsa lentissima o camminata veloce prima. Ritmo forte ma regolare, che riesci a tenere fino alla fine, senza scatto iniziale.",
+        "extra": [ { "chiave": "meteo", "nome": "Meteo", "esempio": "es. vento, freddo forte" } ] }
+    ]
+  },
+
+  "regole": [
+    {
+      "titolo": "Quanto spingere: le ripetizioni in riserva",
+      "testo": [
+        "Ogni serie si ferma quando potresti farne ancora qualcuna, sempre con una buona esecuzione: lunedì 1-2 in riserva, mercoledì 2-3, venerdì 3-4.",
+        "Non si va mai allo sfinimento: il grosso dei risultati arriva già fermandosi poco prima, mentre lo sfinimento aumenta molto fatica e indolenzimento, che poi pesano sul tennis."
+      ]
+    },
+    {
+      "titolo": "Come si progredisce: la doppia progressione",
+      "testo": [
+        "Ogni esercizio ha un intervallo di ripetizioni (per esempio 8-12) e una scala di varianti, dalla più facile alla più difficile.",
+        "Parti dalla variante con cui arrivi almeno al minimo, rispettando le ripetizioni in riserva. A ogni allenamento prova a fare 1 ripetizione in più in almeno una serie.",
+        "Quando arrivi al massimo in tutte le serie, dall'allenamento dopo passi alla variante successiva e riparti dal minimo. L'app te lo segnala."
+      ]
+    },
+    {
+      "titolo": "Le coppie",
+      "testo": [
+        "Una serie di A1, circa 45 secondi di pausa, una serie di A2, circa 45 secondi di pausa, e si ricomincia. Finiti i giri, si passa alla coppia successiva. Così sfrutti le pause e resti nei 30 minuti."
+      ]
+    },
+    {
+      "titolo": "Quanti giri",
+      "testo": [
+        "Settimane 1 e 2: 2 giri (molti esercizi sono nuovi, e gli esercizi nuovi indolenziscono). Dalla settimana 3: 3 giri. Nella settimana 1, dopo i test, il resto dell'allenamento si fa con 2 giri."
+      ]
+    },
+    {
+      "titolo": "Se salti il lunedì",
+      "testo": [ "Il mercoledì fai la scheda del lunedì." ]
+    },
+    {
+      "titolo": "Settimana di mantenimento (settimane scolastiche pesanti)",
+      "testo": [
+        "Si decide la domenica e si segna nell'app. Stessi giorni e stessi esercizi, ma 2 giri invece di 3, e su tutti i giorni 3-4 ripetizioni in riserva. Circa 20 minuti. Corsa: 20 minuti facili, senza allunghi. In quella settimana non si passa alla variante successiva."
+      ]
+    },
+    {
+      "titolo": "Minimo garantito di 10 minuti (giornate no)",
+      "testo": [
+        "2 minuti di riscaldamento, poi 2 giri di tre esercizi. Dopo i 10 minuti, se ti va, continui. Se no, va benissimo così: l'allenamento conta come fatto.",
+        "Se in una settimana la versione da 10 minuti si usa più di due volte, se ne parla nella conversazione successiva."
+      ]
+    },
+    {
+      "titolo": "Inverno",
+      "testo": [
+        "Di base si va in garage, ma se la temperatura esterna sull'app meteo è sotto i 5 °C, ci si allena in casa con la stessa scheda.",
+        "In garage: riscaldamento di 8-10 minuti, felpa fino alla fine del riscaldamento, pause brevi. I salti del mercoledì si fanno solo dopo il riscaldamento completo."
+      ]
+    },
+    {
+      "titolo": "Tornei",
+      "testo": [
+        "Nei 2 giorni prima della prima partita: niente Forza, niente Atleta, niente corsa. Al massimo la versione leggera del venerdì.",
+        "Durante il torneo: niente allenamenti a casa. Dopo il torneo: 1-2 giorni tranquilli, poi si riprende dal giorno in calendario."
+      ]
+    },
+    {
+      "titolo": "Sicurezza",
+      "testo": [
+        "Se un esercizio fa male (dolore, non fatica), si salta e si scrive nelle note. Se il dolore è acuto, peggiora o non passa, ci si ferma e si sente un medico o un fisioterapista."
+      ]
+    }
+  ]
+}

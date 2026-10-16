@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scheda da stampare</title>
+<style>
+  @page { size: A4; margin: 12mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Arial, sans-serif; color: #1a1a1a; background: #fff; margin: 0 auto; max-width: 190mm; padding: 16px; font-size: 10pt; line-height: 1.35; }
+  h1 { font-size: 16pt; margin: 0 0 2px; }
+  h2 { font-size: 12pt; margin: 12px 0 6px; padding-bottom: 2px; border-bottom: 2px solid #1a1a1a; }
+  .sub { color: #555; margin: 0 0 8px; }
+  table { width: 100%; border-collapse: collapse; margin: 4px 0 8px; }
+  th, td { border: 1px solid #999; padding: 3px 5px; text-align: left; vertical-align: top; }
+  th { background: #eee; }
+  .qty { white-space: nowrap; font-weight: 700; }
+  .how { color: #444; font-size: 9pt; }
+  ul { margin: 4px 0; padding-left: 18px; }
+  .salto { page-break-before: always; break-before: page; }
+  .reg td { height: 24px; }
+  .reg td.n { width: 30%; }
+  .aiuto { background: #f4f4f4; border: 1px solid #ccc; padding: 8px 10px; margin-bottom: 12px; }
+  @media print { .aiuto { display: none; } body { padding: 0; } }
+</style>
+</head>
+<body>
+<div class="aiuto">Per stampare: Ctrl+P sul PC, oppure menu ⋮ → Condividi → Stampa sul telefono. Le prime pagine sono la scheda, le ultime il registro da compilare.</div>
+<div id="contenuto">Carico la scheda…</div>
+<script src="stampa.js"></script>
+</body>
+</html>

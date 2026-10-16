@@ -1,0 +1,17 @@
+{
+  "name": "Allenamento",
+  "short_name": "Allenamento",
+  "description": "Allenamento a corpo libero per un tennista: scheda guidata, timer e registro, anche senza internet.",
+  "lang": "it",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#101613",
+  "theme_color": "#101613",
+  "icons": [
+    { "src": "icone/icona-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icone/icona-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icone/icona-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
