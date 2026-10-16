@@ -2,7 +2,7 @@
 
 App web per allenarsi a casa a corpo libero, pensata per un tennista. Mostra la scheda del giorno un esercizio alla volta, con il timer delle pause, e registra serie, varianti, voto e note. Funziona anche senza internet e si installa sulla schermata Home del telefono.
 
-**Indirizzo:** https://vincemts.github.io/allenamento/
+**Indirizzo:** https://vincemts.github.io/Allenamento/
 
 ## Come è fatta
 
