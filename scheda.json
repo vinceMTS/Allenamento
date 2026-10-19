@@ -1,7 +1,7 @@
 {
   "versione": "2026-11-ciclo-1",
   "titolo": "Ciclo 1",
-  "aggiornata": "2026-10-16",
+  "aggiornata": "2026-10-19",
   "novita": "Prima scheda del programma vero: tre giornate (Forza, Atleta, Spalle e core) più la corsa della domenica.",
   "settimaneCiclo": 5,
   "settimaneTest": [1, 6],
@@ -465,7 +465,8 @@
       "titolo": "Tornei",
       "testo": [
         "Nei 2 giorni prima della prima partita: niente Forza, niente Atleta, niente corsa. Al massimo la versione leggera del venerdì.",
-        "Durante il torneo: niente allenamenti a casa. Dopo il torneo: 1-2 giorni tranquilli, poi si riprende dal giorno in calendario."
+        "Durante il torneo: niente allenamenti a casa. Dopo il torneo: 1-2 giorni tranquilli, poi si riprende dal giorno in calendario.",
+        "Nell'app: appena sai le date, inserisci il torneo dalla pagina Oggi. L'app applica queste regole da sola e ti dice cosa fare ogni giorno."
       ]
     },
     {

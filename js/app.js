@@ -2,7 +2,8 @@
 import * as L from './logica.js';
 import * as D from './dati.js';
 
-const VERSIONE_APP = '1.0.0';
+const VERSIONE_APP = '1.1.0';
+const NOVITA_APP = "Ora puoi inserire il torneo dalla pagina Oggi: l'app sistema da sola gli allenamenti prima, durante e dopo. E puoi segnare un allenamento saltato, oggi oppure toccando il pallino di un giorno passato.";
 
 const app = document.getElementById('app');
 const elPausa = document.getElementById('pausa');
@@ -15,11 +16,17 @@ let dati = D.carica();
 const ui = {
   prep: null, nota: { tipo: 'messaggio', testo: '' }, pausa: null, pausaInt: null,
   crono: null, cronoInt: null, foglio: null, riepilogo: null, wakeLock: null, rottaPrima: null,
+  salto: null, torneo: null,
 };
 
 const GIORNI_SETTIMANA = [
-  { id: 'forza', breve: 'Lun' }, { id: 'atleta', breve: 'Mer' },
-  { id: 'spalle', breve: 'Ven' }, { id: 'corsa', breve: 'Dom' },
+  { id: 'forza', breve: 'Lun', giorno: 1 }, { id: 'atleta', breve: 'Mer', giorno: 3 },
+  { id: 'spalle', breve: 'Ven', giorno: 5 }, { id: 'corsa', breve: 'Dom', giorno: 7 },
+];
+
+const MOTIVI_SALTO = [
+  ['stanchezza', 'Stanco o giornata no'], ['impegni', 'Scuola o impegni'],
+  ['salute', 'Malato o dolore'], ['tennis', 'Tennis o torneo'], ['altro', 'Altro motivo'],
 ];
 
 // ---------- Utilità ----------
@@ -39,9 +46,12 @@ function infoSettimana(data = oggi()) {
   const sett = L.settimanaCiclo(dati.impostazioni.inizioCiclo, data);
   const iso = L.settimanaISO(data);
   const mant = !!dati.settimane[iso]?.mantenimento;
+  const torneo = L.faseTorneo(dati.tornei, data);
+  // Nella vigilia del torneo l'unico allenamento ammesso si fa leggero, come in mantenimento.
+  const vigilia = torneo?.fase === 'vigilia';
   return {
-    sett, iso, mant,
-    modalitaBase: mant ? 'mantenimento' : 'normale',
+    sett, iso, mant, torneo, vigilia,
+    modalitaBase: mant || vigilia ? 'mantenimento' : 'normale',
     test: sett != null && sett >= 1 && L.eSettimanaTest(scheda, sett),
   };
 }
@@ -49,7 +59,7 @@ function infoSettimana(data = oggi()) {
 function testoSettimana(info) {
   const n = scheda.settimaneCiclo;
   if (info.sett == null) return scheda.titolo;
-  if (info.sett < 1) return `${scheda.titolo} non ancora iniziato`;
+  if (info.sett < 1) return `${scheda.titolo} · settimana di prova`;
   if (info.sett <= n) return `${scheda.titolo} · settimana ${info.sett} di ${n}`;
   if (info.sett === n + 1) return `${scheda.titolo} · settimana ${info.sett}: test e bilancio`;
   return `${scheda.titolo} finito: aggiorna la scheda con Claude`;
@@ -139,10 +149,35 @@ function nav(r) {
     `<a href="#/${h}" class="${attiva === h ? 'attiva' : ''}"><span>${i}</span>${t}</a>`).join('')}</nav>`;
 }
 
-function puntiSettimana(iso) {
+// I pallini della settimana. Con "tocca" i giorni passati non segnati (e quelli saltati) si possono toccare.
+function puntiSettimana(data, tocca = false) {
+  const iso = L.settimanaISO(data);
+  const lun = L.lunediDi(data);
   const { fatti } = L.riassuntoSettimana(dati.allenamenti, iso);
-  return `<div class="punti">${GIORNI_SETTIMANA.map((g) =>
-    `<div class="punto ${fatti.has(g.id) ? 'fatto' : ''}"><b>${fatti.has(g.id) ? '✓' : ''}</b><span>${g.breve}</span><small>${esc(nomeGiornata(g.id))}</small></div>`).join('')}</div>`;
+  let daSegnare = false;
+  const html = GIORNI_SETTIMANA.map((g) => {
+    const giorno = L.aggiungiGiorni(lun, g.giorno - 1);
+    const saltato = !fatti.has(g.id) && saltatoDi(g.id, iso);
+    const torneo = !fatti.has(g.id) && !saltato && L.bloccataDalTorneo(dati.tornei, giorno, g.id);
+    const vuoto = !fatti.has(g.id) && !saltato && !torneo && giorno < oggi();
+    const [classe, segno] = fatti.has(g.id) ? ['fatto', '✓'] : saltato ? ['saltato', '–'] : torneo ? ['torneo', '🎾'] : vuoto ? ['vuoto', '?'] : ['', ''];
+    const dentro = `<b>${segno}</b><span>${g.breve}</span><small>${esc(nomeGiornata(g.id))}</small>`;
+    if (tocca && (vuoto || saltato)) {
+      daSegnare = daSegnare || vuoto;
+      return `<button class="punto ${classe}" data-az="apriGiorno" data-v="${g.id}" data-d="${giorno}">${dentro}</button>`;
+    }
+    return `<div class="punto ${classe}">${dentro}</div>`;
+  }).join('');
+  return `<div class="punti">${html}</div>
+    ${daSegnare ? '<p class="piccolo">Tocca un pallino con il ? per segnare quell\'allenamento come fatto (lo ricopi) o come saltato.</p>' : ''}`;
+}
+
+function saltatoDi(giornata, iso) {
+  return dati.saltati.find((s) => s.giornata === giornata && L.settimanaISO(s.data) === iso) || null;
+}
+
+function testoMotivo(m) {
+  return (MOTIVI_SALTO.find(([k]) => k === m) || [m, m])[1];
 }
 
 // ---------- Schermata "Oggi" ----------
@@ -164,6 +199,11 @@ function vistaOggi() {
       <button class="btn" data-az="annullaInCorso">Annulla</button></div></section>`);
   }
 
+  if (dati.appVista !== VERSIONE_APP) {
+    parti.push(`<section class="carta evidenza"><h2>Novità dell'app</h2><p>${esc(NOVITA_APP)}</p>
+      <button class="btn" data-az="appVista">Ok, ho letto</button></section>`);
+  }
+
   if (dati.schedaVista !== scheda.versione) {
     parti.push(`<section class="carta"><h2>Scheda aggiornata</h2><p>${esc(scheda.novita)}</p>
       <button class="btn" data-az="schedaVista">Ok, ho letto</button></section>`);
@@ -172,12 +212,12 @@ function vistaOggi() {
   if (!imp.inizioCiclo) {
     const lun = L.aggiungiGiorni(L.lunediDi(d), 7);
     parti.push(`<section class="carta evidenza"><h2>Quando inizia il ${esc(scheda.titolo.toLowerCase())}?</h2>
-      <p>Il ciclo parte il lunedì della settimana dopo il torneo, passati 2-3 giorni tranquilli. Serve all'app per sapere in che settimana sei (test, 2 o 3 giri).</p>
+      <p>Serve all'app per sapere in che settimana sei (test, 2 o 3 giri). La settimana 1 è quella dei test.</p>
       <label class="campo">Lunedì di inizio<input type="date" data-imp="inizioCiclo" value=""></label>
       <button class="btn" data-az="inizioProssimo" data-v="${lun}">Lunedì prossimo (${esc(L.dataLeggibile(lun, false))})</button></section>`);
   } else if (info.sett < 1) {
-    parti.push(`<section class="carta"><p>Il ${esc(scheda.titolo.toLowerCase())} parte <b>${esc(L.dataLeggibile(L.lunediDi(imp.inizioCiclo)))}</b>. Fino ad allora vale il piano pre-torneo su carta.</p>
-      <p class="piccolo">Puoi provare l'app: gli allenamenti di prova si cancellano dallo Storico.</p></section>`);
+    parti.push(`<section class="carta"><h2>Settimana di prova</h2>
+      <p>Fai le giornate del ciclo con 2 giri, così impari gli esercizi nuovi. Il ciclo vero, con i test, parte <b>${esc(L.dataLeggibile(L.lunediDi(imp.inizioCiclo)))}</b>.</p></section>`);
   }
 
   if (info.test) {
@@ -185,23 +225,38 @@ function vistaOggi() {
       <p>Ogni giorno: riscaldamento, i test del giorno, poi il resto dell'allenamento con 2 giri.</p></section>`);
   }
 
-  const cons = L.giornataConsigliata(scheda, dati.allenamenti, d);
+  // Prima, durante e subito dopo il torneo la carta del torneo va in alto; altrimenti dopo "Oggi".
+  const torneoInAlto = info.torneo && info.torneo.fase !== 'prima';
+  if (torneoInAlto) parti.push(cartaTorneo(d, info));
+
+  const cons = L.giornataConsigliata(scheda, dati.allenamenti, d, dati.tornei);
   const fattoOggi = dati.allenamenti.filter((a) => a.data === d);
+  const saltatoOggi = dati.saltati.find((s) => s.data === d);
   if (fattoOggi.length) {
     parti.push(`<section class="carta fatto"><h2>Fatto oggi ✓</h2>
       <p>${fattoOggi.map((a) => esc(a.nome) + (a.modalita === 'dieci' ? ' (10 minuti)' : '')).join(', ')}. Ben fatto.</p></section>`);
+  } else if (saltatoOggi) {
+    parti.push(`<section class="carta"><h2>Oggi salti: ${esc(nomeGiornata(saltatoOggi.giornata))}</h2>
+      <p class="piccolo">Motivo: ${esc(testoMotivo(saltatoOggi.motivo))}. Se poi riesci ad allenarti, scegli l'allenamento qui sotto: il segno si toglie da solo.</p>
+      <button class="btn" data-az="togliSaltato" data-v="${saltatoOggi.id}">Mi sono sbagliato, non salto</button></section>`);
   } else if (cons.id) {
     const g = cons.id === 'corsa' ? scheda.corsa : L.trovaGiornata(scheda, cons.id);
     parti.push(`<section class="carta oggi"><p class="piccolo">Oggi tocca a</p><h2 class="titolone">${esc(g.nome)}</h2>
       ${cons.motivo ? `<p class="nota-motivo">${esc(cons.motivo)}</p>` : ''}
       <p>${esc(cons.id === 'corsa' ? testoCorsa(info) : g.descrizione)}</p>
-      <button class="btn primario largo" data-az="prepara" data-v="${cons.id}">Inizia</button></section>`);
+      <button class="btn primario largo" data-az="prepara" data-v="${cons.id}">Inizia</button>
+      <button class="link" data-az="apriSalto" data-v="${cons.id}" data-d="${d}">Oggi non riesco ad allenarmi</button></section>`);
   } else {
-    parti.push(`<section class="carta"><h2>${esc(cons.motivo)}</h2><p class="piccolo">Se oggi vuoi recuperare un allenamento, sceglilo qui sotto.</p></section>`);
+    parti.push(`<section class="carta ${cons.torneo ? 'avviso' : ''}"><h2>${esc(cons.motivo)}</h2>
+      ${cons.alternativa ? `<p class="piccolo">Se ti va, al massimo ${esc(nomeGiornata(cons.alternativa))} in versione leggera.</p>
+        <button class="btn" data-az="prepara" data-v="${cons.alternativa}">${esc(nomeGiornata(cons.alternativa))} leggero</button>`
+        : `<p class="piccolo">${cons.torneo ? 'Se ti alleni comunque, sceglilo qui sotto: viene segnato.' : 'Se oggi vuoi recuperare un allenamento, sceglilo qui sotto.'}</p>`}</section>`);
   }
 
+  if (!torneoInAlto) parti.push(cartaTorneo(d, info));
+
   const r = L.riassuntoSettimana(dati.allenamenti, info.iso);
-  parti.push(`<section class="carta"><h2>Questa settimana</h2>${puntiSettimana(info.iso)}
+  parti.push(`<section class="carta"><h2>Questa settimana</h2>${puntiSettimana(d, true)}
     ${r.dieci ? `<p class="piccolo">Versione da 10 minuti usata ${r.dieci} ${r.dieci === 1 ? 'volta' : 'volte'}.</p>` : ''}
     ${r.dieci > 2 ? '<p class="avviso-testo">Più di due volte: parlane con Claude nella prossima conversazione.</p>' : ''}
     ${interruttore('mantenimento', info.mant, 'Settimana di mantenimento (settimana pesante)', `data-v="${info.iso}"`)}
@@ -228,6 +283,130 @@ function interruttoreProssima(d) {
   return interruttore('mantenimento', !!dati.settimane[iso]?.mantenimento, 'Anche la prossima settimana di mantenimento', `data-v="${iso}"`);
 }
 
+// ---------- Torneo ----------
+
+const maiuscola = (x) => x.charAt(0).toUpperCase() + x.slice(1);
+
+function dalAl(t) {
+  const fine = t.fine || t.inizio;
+  return fine === t.inizio ? L.dataLeggibile(t.inizio)
+    : `dal ${L.dataLeggibile(t.inizio)} al ${L.dataLeggibile(fine)}`;
+}
+
+// Cosa cambia negli allenamenti, giorno per giorno.
+function pianoTorneo(t) {
+  const fine = t.fine || t.inizio;
+  const g = (n) => esc(L.dataLeggibile(L.aggiungiGiorni(t.inizio, n)));
+  return `<ul class="piano-torneo">
+    <li><b>Fino a ${g(-3)}</b>: allenamenti normali.</li>
+    <li><b>${maiuscola(g(-2))} e ${g(-1)}</b>: niente Forza, Atleta e corsa. Al massimo Spalle e core, leggero.</li>
+    <li><b>${maiuscola(esc(dalAl(t)))}</b>: niente allenamenti a casa. Il riscaldamento di 12 minuti prima delle partite resta.</li>
+    <li><b>${maiuscola(esc(L.dataLeggibile(L.aggiungiGiorni(fine, 1))))}</b>: giorno tranquillo. Il giorno dopo riprendi, se ti senti fresco.</li></ul>`;
+}
+
+function cartaTorneo(d, info) {
+  const f = info.torneo;
+  if (!f) {
+    return `<section class="carta"><h2>🎾 Hai un torneo in arrivo?</h2>
+      <p>Appena sai le date (basta il giorno della prima partita), inseriscile qui. L'app sistema da sola gli allenamenti dei giorni prima, durante e dopo.</p>
+      <button class="btn largo" data-az="apriTorneo">Inserisci il torneo</button></section>`;
+  }
+  const t = f.torneo;
+  const nome = esc(t.nome || 'Torneo');
+  const modifica = '<button class="link" data-az="apriTorneo" data-v="modifica">Modifica le date</button>';
+
+  if (f.fase === 'prima') {
+    const spostaA = L.lunediDopoTorneo(t);
+    const neiTest = L.torneoNeiTest(t, dati.impostazioni.inizioCiclo) && spostaA !== dati.impostazioni.inizioCiclo;
+    return `<section class="carta evidenza"><h2>🎾 ${nome}: tra ${f.mancano} giorni</h2>
+      <p>${maiuscola(esc(dalAl(t)))}.</p>${pianoTorneo(t)}
+      ${neiTest ? `<div class="suggerimento"><p><b>Il torneo cade nella settimana dei test.</b> Conviene spostare l'inizio del ciclo a ${esc(L.dataLeggibile(spostaA))}, così fai i test da fresco.</p>
+        <button class="btn primario" data-az="spostaCiclo" data-v="${spostaA}">Sposta l'inizio del ciclo</button></div>` : ''}
+      ${modifica}</section>`;
+  }
+  if (f.fase === 'vigilia') {
+    return `<section class="carta avviso"><h2>🎾 ${nome}: ${f.mancano === 1 ? 'domani la prima partita' : `tra ${f.mancano} giorni`}</h2>
+      <p>Oggi niente Forza, Atleta e corsa: arrivi fresco alla prima partita.</p>${modifica}</section>`;
+  }
+  if (f.fase === 'torneo') {
+    const fine = t.fine || t.inizio;
+    return `<section class="carta evidenza"><h2>🎾 ${nome}: giorno ${f.giorno}${f.totale > 1 ? ` di ${f.totale}` : ''}</h2>
+      <p>Niente allenamenti a casa. Il riscaldamento abituale di 12 minuti prima delle partite resta.</p>
+      ${d < fine ? `<button class="btn largo" data-az="torneoFinito">Per me il torneo è finito oggi</button>
+        <p class="piccolo">Toccalo se esci prima del ${esc(L.dataLeggibile(fine, false))}: gli allenamenti ripartono prima.</p>` : ''}
+      <button class="link" data-az="apriAllenamentoTorneo">Mi sono allenato lo stesso: segnalo</button>
+      ${modifica}</section>`;
+  }
+  return `<section class="carta"><h2>🎾 ${nome} finito</h2>
+    <p>${f.giorno === 1 ? 'Oggi giorno tranquillo.' : 'Oggi puoi riprendere, se ti senti fresco.'} Com'è andata? Scrivilo a Claude: risultati, stanchezza, fastidi.</p>
+    <button class="btn" data-az="vai" data-v="#/note">✎ Scrivi a Claude</button></section>`;
+}
+
+function foglioTorneo(modifica) {
+  const t = modifica ? L.torneoDi(dati.tornei, oggi()) : null;
+  ui.torneo = t ? { id: t.id, nome: t.nome || '', inizio: t.inizio, fine: t.fine || t.inizio }
+    : { id: null, nome: '', inizio: '', fine: '' };
+  const v = ui.torneo;
+  apriFoglio(`<h2>${t ? 'Modifica il torneo' : 'Inserisci il torneo'}</h2>
+    <label class="campo">Nome (facoltativo)<input type="text" data-tor="nome" value="${esc(v.nome)}" placeholder="Per esempio: Torneo under 18"></label>
+    <label class="campo">Giorno della prima partita<input type="date" data-tor="inizio" value="${esc(v.inizio)}"></label>
+    <label class="campo">Ultimo giorno in cui potresti giocare<input type="date" data-tor="fine" value="${esc(v.fine)}"></label>
+    <p class="piccolo">Se non sai quando finisce, metti l'ultimo giorno possibile (per esempio la finale). Se esci prima, lo segni con un tocco dalla pagina Oggi.</p>
+    <button class="btn primario largo" data-az="salvaTorneo">Salva</button>
+    ${t ? '<button class="btn pericolo largo" data-az="eliminaTorneo">Elimina il torneo</button>' : ''}
+    <button class="btn largo" data-az="chiudiFoglio">Annulla</button>`);
+}
+
+function salvaTorneo() {
+  const v = ui.torneo;
+  if (!v.inizio) { toast('Inserisci il giorno della prima partita'); return; }
+  const fine = v.fine || v.inizio;
+  if (fine < v.inizio) { toast('L\'ultimo giorno non può venire prima della prima partita'); return; }
+  const vecchio = v.id && dati.tornei.find((t) => t.id === v.id);
+  if (vecchio) Object.assign(vecchio, { nome: v.nome.trim(), inizio: v.inizio, fine });
+  else dati.tornei.push({ id: D.nuovoId(), nome: v.nome.trim(), inizio: v.inizio, fine, creato: new Date().toISOString() });
+  ui.torneo = null;
+  salva(); chiudiFoglio(); render();
+  toast('Torneo salvato: gli allenamenti si adattano da soli');
+}
+
+function foglioAllenamentoTorneo() {
+  apriFoglio(`<h2>Quale allenamento hai fatto?</h2>
+    <p class="piccolo">Va bene, succede. Viene segnato come fatto durante il torneo, così Claude lo sa.</p>
+    ${GIORNI_SETTIMANA.map((g) => `<button class="voce" data-az="prepara" data-v="${g.id}"><span>${esc(nomeGiornata(g.id))}</span></button>`).join('')}
+    <button class="btn largo" data-az="chiudiFoglio">Annulla</button>`);
+}
+
+// ---------- Allenamenti saltati ----------
+
+function foglioSalto(giornata, data) {
+  ui.salto = { giornata, data };
+  const oggiStesso = data === oggi();
+  apriFoglio(`<h2>Salti ${esc(nomeGiornata(giornata))}${oggiStesso ? ' oggi' : ` di ${esc(L.dataLeggibile(data))}`}?</h2>
+    ${oggiStesso && giornata !== 'corsa' ? `<div class="suggerimento"><p>Hai 10 minuti? La versione corta conta come allenamento fatto.</p>
+      <button class="btn primario largo" data-az="dieciOra" data-v="${giornata}">Faccio i 10 minuti</button></div>` : ''}
+    <p class="piccolo">Perché salti? Lo legge Claude: serve a capire se c'è qualcosa da sistemare.</p>
+    ${MOTIVI_SALTO.map(([k, t]) => `<button class="voce" data-az="segnaSaltato" data-v="${k}"><span>${esc(t)}</span></button>`).join('')}
+    <button class="btn largo" data-az="chiudiFoglio">Annulla</button>`);
+}
+
+// Un pallino di un giorno passato: segnarlo come fatto (ricopiandolo) o come saltato.
+function foglioGiorno(giornata, data) {
+  const s = saltatoDi(giornata, L.settimanaISO(data));
+  if (s) {
+    apriFoglio(`<h2>${esc(nomeGiornata(giornata))} · ${esc(L.dataLeggibile(s.data))}</h2>
+      <p>Segnato come saltato: ${esc(testoMotivo(s.motivo))}.</p>
+      <button class="voce" data-az="togliSaltato" data-v="${s.id}"><span>Togli il segno "saltato"</span></button>
+      <button class="btn largo" data-az="chiudiFoglio">Chiudi</button>`);
+    return;
+  }
+  apriFoglio(`<h2>${esc(nomeGiornata(giornata))} · ${esc(L.dataLeggibile(data))}</h2>
+    <p class="piccolo">Questo allenamento non risulta fatto.</p>
+    <button class="voce" data-az="ricopia" data-v="${giornata}" data-d="${data}"><span>L'ho fatto: lo ricopio (dal foglio o a memoria)</span></button>
+    <button class="voce" data-az="apriSalto" data-v="${giornata}" data-d="${data}"><span>L'ho saltato</span></button>
+    <button class="btn largo" data-az="chiudiFoglio">Chiudi</button>`);
+}
+
 function pianoCorsa(info) {
   if (info.mant) return scheda.corsa.mantenimento;
   const s = info.sett == null || info.sett < 1 ? 2 : Math.min(info.sett, Object.keys(scheda.corsa.settimane).length);
@@ -240,6 +419,28 @@ function testoCorsa(info) {
 
 // ---------- Preparazione ----------
 
+function nuovaPrep(id, data = oggi()) {
+  const info = infoSettimana(data);
+  const giaTest = dati.test.some((t) => L.settimanaISO(t.data) === info.iso &&
+    (scheda.test[id] || []).some((x) => x.chiave === t.chiave));
+  return { giornata: id, modalita: 'normale', dove: id === 'corsa' ? 'strada' : 'garage',
+    // Niente test al massimo a ridosso del torneo: si possono sempre attivare a mano.
+    conTest: info.test && !giaTest && !(info.torneo && info.torneo.fase !== 'prima'), daCarta: data !== oggi(), data };
+}
+
+// Avviso nella preparazione se la regola dei tornei dice di non fare questo allenamento.
+function avvisoTorneo(id, data) {
+  if (!L.bloccataDalTorneo(dati.tornei, data, id)) return '';
+  const f = L.faseTorneo(dati.tornei, data);
+  const [titolo, regola] = f.fase === 'torneo'
+    ? ['Sei nel torneo', 'durante il torneo niente allenamenti a casa']
+    : f.fase === 'vigilia'
+      ? ['Vigilia del torneo', 'nei 2 giorni prima della prima partita niente Forza, Atleta e corsa']
+      : ['Giorno tranquillo dopo il torneo', 'il primo giorno dopo il torneo si riposa'];
+  return `<section class="carta avviso"><h2>🎾 ${titolo}</h2>
+    <p>La regola dice che ${regola}. Se lo fai comunque va bene: viene segnato, così Claude lo sa.</p></section>`;
+}
+
 function vistaPreparazione(id) {
   if (dati.inCorso) {
     return `<main class="pagina"><section class="carta evidenza"><h2>C'è già un allenamento in corso</h2>
@@ -247,13 +448,7 @@ function vistaPreparazione(id) {
       <div class="riga"><button class="btn primario" data-az="riprendi">Riprendi</button>
       <button class="btn" data-az="annullaInCorso">Annulla</button></div></section></main>`;
   }
-  if (!ui.prep || ui.prep.giornata !== id) {
-    const info = infoSettimana();
-    const giaTest = dati.test.some((t) => L.settimanaISO(t.data) === info.iso &&
-      (scheda.test[id] || []).some((x) => x.chiave === t.chiave));
-    ui.prep = { giornata: id, modalita: 'normale', dove: id === 'corsa' ? 'strada' : 'garage',
-      conTest: info.test && !giaTest, daCarta: false, data: oggi() };
-  }
+  if (!ui.prep || ui.prep.giornata !== id) ui.prep = nuovaPrep(id);
   const p = ui.prep;
   const info = infoSettimana(p.data);
   const corsa = id === 'corsa';
@@ -262,7 +457,7 @@ function vistaPreparazione(id) {
   const modalita = p.modalita === 'dieci' ? 'dieci' : info.modalitaBase;
   const haTest = info.test && (scheda.test[id] || []).length;
 
-  let corpo = '';
+  let corpo = avvisoTorneo(id, p.data);
   if (corsa) {
     const piano = pianoCorsa(info);
     corpo += `<section class="carta"><h2>Oggi</h2><p class="grande-testo">${esc(info.test && p.conTest ? scheda.test.corsa[0].nome : piano.testo)}</p>
@@ -273,7 +468,7 @@ function vistaPreparazione(id) {
   } else {
     const giri = L.giriPer(scheda, info.sett, modalita);
     corpo += `<section class="carta"><h2>Come va oggi?</h2>
-      ${scelta('prepModalita', [['normale', info.mant ? 'Mantenimento' : 'Allenamento completo'], ['dieci', 'Giornata no: 10 minuti']], p.modalita)}
+      ${scelta('prepModalita', [['normale', info.vigilia ? 'Versione leggera' : info.mant ? 'Mantenimento' : 'Allenamento completo'], ['dieci', 'Giornata no: 10 minuti']], p.modalita)}
       <p class="piccolo">${modalita === 'dieci'
         ? 'Tre esercizi, 2 giri. Dopo, se ti va, continui. Se no va benissimo: conta come fatto.'
         : `${giri} giri · ${esc(L.riservaPer(g, modalita))} ripetizioni in riserva · ${esc(modalita === 'mantenimento' ? 'circa 20 minuti' : g.durata)}`}</p></section>
@@ -318,6 +513,7 @@ function iniziaAllenamento() {
     id: D.nuovoId(), giornata: p.giornata, nome: nomeGiornata(p.giornata), data: p.data,
     creato: new Date().toISOString(), settimanaCiclo: info.sett, modalita, daCarta: p.daCarta,
     dove: p.dove, conTest, schedaVersione: scheda.versione, passi, passo: 0,
+    torneo: info.torneo && info.torneo.fase !== 'prima' ? { id: info.torneo.torneo.id, fase: info.torneo.fase } : null,
     esercizi: {}, ordine: [], test: {}, liste: {}, migliorie: 0,
     corsa: null, valore: null, voto: null, note: '', messaggio: '', dolore: '', conDolore: false,
   };
@@ -714,6 +910,7 @@ function salvaAllenamento() {
       .filter((e) => e.serie.length || (e.saltato && e.motivo !== 'facoltativo')),
     voto: c.voto, note: c.note.trim(), dolore: c.conDolore ? c.dolore.trim() || 'sì' : '',
   };
+  if (c.torneo) rec.torneo = c.torneo;
   if (c.corsa && c.passi.some((p) => p.tipo === 'corsa')) {
     rec.corsa = { minuti: c.corsa.minuti, km: c.corsa.km === '' ? null : Number(c.corsa.km), allunghi: c.corsa.allunghi };
   }
@@ -735,6 +932,9 @@ function salvaAllenamento() {
       testo: c.messaggio.trim(), allenamento: c.id });
   }
   dati.allenamenti.push(rec);
+  // Se quel giorno (o quella giornata, nella stessa settimana) era segnato come saltato, il segno si toglie.
+  dati.saltati = dati.saltati.filter((s) => s.data !== rec.data &&
+    !(s.giornata === rec.giornata && L.settimanaISO(s.data) === L.settimanaISO(rec.data)));
 
   // Suggerimenti per la prossima volta (doppia progressione).
   const g = c.giornata === 'corsa' ? null : L.trovaGiornata(scheda, c.giornata);
@@ -762,7 +962,7 @@ function vistaFatto() {
   return `<main class="pagina fine"><div class="festa">✓</div><h1>Allenamento salvato</h1>
     <p class="grande-testo">${esc(r.rec.nome)}: fatto. ${totale > 1 ? `È il ${totale}° di questa settimana.` : 'Il primo di questa settimana.'}</p>
     ${r.migliorie ? `<p class="spinta">${r.migliorie} ${r.migliorie === 1 ? 'serie migliorata' : 'serie migliorate'} rispetto all'ultima volta.</p>` : ''}
-    <section class="carta">${puntiSettimana(info.iso)}</section>
+    <section class="carta">${puntiSettimana(r.rec.data)}</section>
     ${r.prossima.length ? `<section class="carta evidenza"><h2>La prossima volta</h2><ul>${r.prossima.map((x) =>
       `<li>${esc(x.nome)}: massimo raggiunto in tutte le serie → passa a <b>${esc(x.variante)}</b></li>`).join('')}</ul></section>` : ''}
     ${r.rec.dolore ? '<section class="carta avviso"><p>Hai segnato un dolore: scrivilo anche a Claude nella prossima conversazione. Se è acuto o peggiora, senti un medico o un fisioterapista.</p></section>' : ''}
@@ -815,7 +1015,7 @@ function foglioEsci() {
 function vistaScheda(id) {
   const info = infoSettimana();
   const scelte = [...scheda.giornate.map((g) => [g.id, g.nome]), ['corsa', 'Corsa'], ['speciali', 'Altre versioni']];
-  const sel = scelte.some(([v]) => v === id) ? id : (L.giornataConsigliata(scheda, dati.allenamenti, oggi()).id || 'forza');
+  const sel = scelte.some(([v]) => v === id) ? id : (L.giornataConsigliata(scheda, dati.allenamenti, oggi(), dati.tornei).id || 'forza');
   const tab = `<div class="schede">${scelte.map(([v, t]) => `<a href="#/scheda/${v}" class="${v === sel ? 'sel' : ''}">${esc(t)}</a>`).join('')}</div>`;
   let corpo = '';
   if (sel === 'corsa') corpo = schedaCorsa(info);
@@ -871,25 +1071,41 @@ function schedaSpeciali() {
 // ---------- Storico ----------
 
 function vistaStorico() {
-  const lista = [...dati.allenamenti].sort((a, b) => b.data.localeCompare(a.data) || (b.creato || '').localeCompare(a.creato || ''));
-  if (!lista.length) {
+  // Allenamenti, allenamenti saltati e tornei, insieme e per settimana.
+  const voci = [
+    ...dati.allenamenti.map((a) => ({ tipo: 'allenamento', data: a.data, ord: a.creato, a })),
+    ...dati.saltati.map((s) => ({ tipo: 'saltato', data: s.data, ord: s.creato, s })),
+    ...dati.tornei.map((t) => ({ tipo: 'torneo', data: t.inizio, ord: t.creato, t })),
+  ].sort((x, y) => y.data.localeCompare(x.data) || (y.ord || '').localeCompare(x.ord || ''));
+  if (!voci.length) {
     return `<main class="pagina"><header class="testa"><h1>Storico</h1></header>
       <section class="carta"><p>Ancora nessun allenamento salvato.</p></section></main>`;
   }
   const gruppi = new Map();
-  for (const a of lista) {
-    const k = L.settimanaISO(a.data);
+  for (const v of voci) {
+    const k = L.settimanaISO(v.data);
     if (!gruppi.has(k)) gruppi.set(k, []);
-    gruppi.get(k).push(a);
+    gruppi.get(k).push(v);
   }
-  const html = [...gruppi.entries()].map(([iso, voci]) => {
-    const sett = voci[0].settimanaCiclo;
+  const riga = (v) => {
+    if (v.tipo === 'saltato') {
+      return `<div class="voce"><b>${esc(L.dataLeggibile(v.data))}</b><span>Saltato: ${esc(nomeGiornata(v.s.giornata))} · ${esc(testoMotivo(v.s.motivo))}</span></div>`;
+    }
+    if (v.tipo === 'torneo') {
+      return `<div class="voce"><b>🎾 ${esc(v.t.nome || 'Torneo')}</b><span>${esc(dalAl(v.t))}${v.t.finitoIl ? ' (finito prima)' : ''}</span></div>`;
+    }
+    const a = v.a;
+    return `<a class="voce" href="#/storico/${a.id}"><b>${esc(L.dataLeggibile(a.data))}</b>
+      <span>${esc(a.nome)}${a.modalita === 'dieci' ? ' · 10 min' : ''}${a.daCarta ? ' · da carta' : ''}${a.torneo ? ' · 🎾 torneo' : ''}${a.dolore ? ' · ⚠ dolore' : ''}</span>
+      <em>${a.voto ? `voto ${a.voto}` : ''}</em></a>`;
+  };
+  const html = [...gruppi.entries()].map(([iso, lista]) => {
+    const sett = lista.find((v) => v.tipo === 'allenamento')?.a.settimanaCiclo;
     return `<section class="carta"><h2>${esc(iso)}${sett >= 1 ? ` · settimana ${sett} del ciclo` : ''}${dati.settimane[iso]?.mantenimento ? ' · mantenimento' : ''}</h2>
-      ${voci.map((a) => `<a class="voce" href="#/storico/${a.id}"><b>${esc(L.dataLeggibile(a.data))}</b>
-        <span>${esc(a.nome)}${a.modalita === 'dieci' ? ' · 10 min' : ''}${a.daCarta ? ' · da carta' : ''}${a.dolore ? ' · ⚠ dolore' : ''}</span>
-        <em>${a.voto ? `voto ${a.voto}` : ''}</em></a>`).join('')}</section>`;
+      ${lista.map(riga).join('')}</section>`;
   }).join('');
-  return `<main class="pagina"><header class="testa"><h1>Storico</h1><p class="piccolo">${lista.length} allenamenti</p></header>${html}</main>`;
+  const n = dati.allenamenti.length;
+  return `<main class="pagina"><header class="testa"><h1>Storico</h1><p class="piccolo">${n} ${n === 1 ? 'allenamento' : 'allenamenti'}</p></header>${html}</main>`;
 }
 
 function vistaDettaglio(id) {
@@ -968,7 +1184,7 @@ function vistaAltro() {
 
 const azioni = {
   vai: (el) => vai(el.dataset.v),
-  prepara: (el) => { ui.prep = null; vai(`#/inizia/${el.dataset.v}`); },
+  prepara: (el) => { ui.prep = null; chiudiFoglio(); vai(`#/inizia/${el.dataset.v}`); },
   inizia: iniziaAllenamento,
   riprendi: () => { chiudiFoglio(); if (!dati.inCorso.daCarta) schermoAcceso(true); vai('#/allena'); },
   annullaInCorso: () => {
@@ -978,6 +1194,49 @@ const azioni = {
   esci: foglioEsci,
   pausaAllenamento: () => { chiudiFoglio(); finePausa(false); fermaCrono(); schermoAcceso(false); vai('#/'); },
   schedaVista: () => { dati.schedaVista = scheda.versione; salva(); render(); },
+  appVista: () => { dati.appVista = VERSIONE_APP; salva(); render(); },
+  apriTorneo: (el) => foglioTorneo(el.dataset.v === 'modifica'),
+  salvaTorneo,
+  eliminaTorneo: () => {
+    if (!confirm('Eliminare il torneo? Gli allenamenti tornano quelli normali.')) return;
+    dati.tornei = dati.tornei.filter((t) => t.id !== ui.torneo.id);
+    salva(); chiudiFoglio(); render();
+  },
+  torneoFinito: () => {
+    const t = L.torneoDi(dati.tornei, oggi());
+    if (!t || !confirm('Il torneo per te è finito oggi? Domani giorno tranquillo, poi si riprende.')) return;
+    t.fine = oggi(); t.finitoIl = oggi();
+    salva(); render(); toast("Segnato. Com'è andata? Scrivilo a Claude.");
+  },
+  spostaCiclo: (el) => {
+    dati.impostazioni.inizioCiclo = el.dataset.v;
+    salva(); render(); toast(`Il ciclo parte ${L.dataLeggibile(el.dataset.v)}`);
+  },
+  apriAllenamentoTorneo: foglioAllenamentoTorneo,
+  apriSalto: (el) => foglioSalto(el.dataset.v, el.dataset.d),
+  apriGiorno: (el) => foglioGiorno(el.dataset.v, el.dataset.d),
+  dieciOra: (el) => {
+    chiudiFoglio();
+    ui.prep = { ...nuovaPrep(el.dataset.v), modalita: 'dieci' };
+    location.hash = `#/inizia/${el.dataset.v}`;
+  },
+  ricopia: (el) => {
+    chiudiFoglio();
+    ui.prep = nuovaPrep(el.dataset.v, el.dataset.d);
+    location.hash = `#/inizia/${el.dataset.v}`;
+  },
+  segnaSaltato: (el) => {
+    const { giornata, data } = ui.salto;
+    dati.saltati = dati.saltati.filter((s) => !(s.giornata === giornata && L.settimanaISO(s.data) === L.settimanaISO(data)));
+    dati.saltati.push({ id: D.nuovoId(), data, creato: new Date().toISOString(), giornata, motivo: el.dataset.v });
+    ui.salto = null;
+    salva(); chiudiFoglio(); render();
+    toast(el.dataset.v === 'salute' ? 'Segnato. Se è un dolore, scrivilo a Claude.' : 'Segnato. Alla prossima!');
+  },
+  togliSaltato: (el) => {
+    dati.saltati = dati.saltati.filter((s) => s.id !== el.dataset.v);
+    salva(); chiudiFoglio(); render();
+  },
   inizioProssimo: (el) => { dati.impostazioni.inizioCiclo = el.dataset.v; salva(); render(); },
   mantenimento: (el) => {
     const iso = el.dataset.v;
@@ -1119,6 +1378,14 @@ document.addEventListener('input', (e) => {
     salva();
   } else if (el.dataset.nota) {
     ui.nota[el.dataset.nota] = v;
+  } else if (el.dataset.tor && ui.torneo) {
+    ui.torneo[el.dataset.tor] = v;
+    // L'ultimo giorno parte uguale alla prima partita: di solito si cambia di poco.
+    if (el.dataset.tor === 'inizio' && (!ui.torneo.fine || ui.torneo.fine < v)) {
+      ui.torneo.fine = v;
+      const campo = elFoglio.querySelector('[data-tor="fine"]');
+      if (campo) campo.value = v;
+    }
   }
 });
 

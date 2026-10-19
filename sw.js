@@ -1,7 +1,7 @@
 // Fa funzionare l'app senza internet.
 // Quando si cambia un file dell'app, aumentare VERSIONE: il telefono scarica la nuova versione.
 // La scheda (scheda.json) invece si scarica sempre per prima, se c'è internet.
-const VERSIONE = 'allenamento-v1';
+const VERSIONE = 'allenamento-v2';
 const FILE = [
   './',
   'index.html',

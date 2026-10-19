@@ -83,6 +83,60 @@ export function riservaPer(giornata, modalita) {
   return modalita === 'mantenimento' ? '3-4' : giornata.riserva;
 }
 
+// ---------- Tornei ----------
+// Regola del programma: nei 2 giorni prima della prima partita ("vigilia") niente Forza,
+// Atleta e corsa, al massimo Spalle e core leggero. Durante il torneo niente allenamenti
+// a casa. Dopo: 1-2 giorni tranquilli ("dopo" 1 e 2), poi si riprende dal calendario.
+
+export const GIORNI_VIGILIA = 2;
+export const GIORNI_DOPO = 2;
+
+// Il torneo che riguarda la data: quello in corso o il prossimo (null se nessuno).
+export function torneoDi(tornei, data) {
+  const attivi = (tornei || [])
+    .filter((t) => t.inizio && aggiungiGiorni(t.fine || t.inizio, GIORNI_DOPO) >= data)
+    .sort((a, b) => a.inizio.localeCompare(b.inizio));
+  return attivi[0] || null;
+}
+
+// Fase della data rispetto al torneo: "prima", "vigilia", "torneo", "dopo" (oppure null).
+export function faseTorneo(tornei, data) {
+  const t = torneoDi(tornei, data);
+  if (!t) return null;
+  const fine = t.fine || t.inizio;
+  const mancano = giorniTra(data, t.inizio);
+  if (mancano > GIORNI_VIGILIA) return { torneo: t, fase: 'prima', mancano };
+  if (mancano > 0) return { torneo: t, fase: 'vigilia', mancano };
+  if (data <= fine) {
+    return { torneo: t, fase: 'torneo', giorno: giorniTra(t.inizio, data) + 1, totale: giorniTra(t.inizio, fine) + 1 };
+  }
+  return { torneo: t, fase: 'dopo', giorno: giorniTra(fine, data) };
+}
+
+// Giornate da non fare in quella data per via del torneo.
+export function bloccataDalTorneo(tornei, data, giornataId) {
+  const f = faseTorneo(tornei, data);
+  if (!f) return false;
+  if (f.fase === 'torneo' || (f.fase === 'dopo' && f.giorno === 1)) return true;
+  return f.fase === 'vigilia' && giornataId !== 'spalle';
+}
+
+// Lunedì giusto per far partire il ciclo dopo il torneo: almeno 2 giorni dopo l'ultima partita.
+export function lunediDopoTorneo(t) {
+  const d = aggiungiGiorni(t.fine || t.inizio, GIORNI_DOPO);
+  return giornoSettimana(d) === 1 ? d : aggiungiGiorni(lunediDi(d), 7);
+}
+
+// Vero se i giorni toccati dal torneo (vigilia, partite, primo giorno dopo) cadono
+// nella settimana 1 del ciclo, quella dei test.
+export function torneoNeiTest(t, inizioCiclo) {
+  if (!t || !inizioCiclo) return false;
+  const lun = lunediDi(inizioCiclo);
+  const da = aggiungiGiorni(t.inizio, -GIORNI_VIGILIA);
+  const a = aggiungiGiorni(t.fine || t.inizio, 1);
+  return da <= aggiungiGiorni(lun, 6) && a >= lun;
+}
+
 // ---------- Scheda ----------
 
 export function trovaGiornata(scheda, id) {
@@ -174,17 +228,34 @@ export function riassuntoSettimana(allenamenti, isoSett) {
   };
 }
 
-// Quale giornata proporre oggi. Regola: se il lunedì è saltato, il mercoledì si fa la Forza.
-export function giornataConsigliata(scheda, allenamenti, oggi) {
+// Quale giornata proporre oggi. Regola: se il lunedì è saltato, il mercoledì si fa la Forza
+// (ma non se il lunedì era bloccato dal torneo: dopo il torneo si riprende dal calendario).
+// Poi si applica la regola dei tornei.
+export function giornataConsigliata(scheda, allenamenti, oggi, tornei = []) {
   const dow = giornoSettimana(oggi);
+  const f = faseTorneo(tornei, oggi);
+  if (f?.fase === 'torneo') return { id: null, torneo: true, motivo: 'Torneo in corso: oggi niente allenamenti a casa.' };
+  if (f?.fase === 'dopo' && f.giorno === 1) return { id: null, torneo: true, motivo: 'Giorno tranquillo dopo il torneo.' };
+
   const { fatti } = riassuntoSettimana(allenamenti, settimanaISO(oggi));
-  if (dow === 3 && !fatti.has('forza') && !fatti.has('atleta')) {
-    return { id: 'forza', motivo: 'Lunedì è saltato: oggi fai la scheda del lunedì (regola del programma).' };
+  let id = null;
+  let motivo = null;
+  if (dow === 3 && !fatti.has('forza') && !fatti.has('atleta') && !bloccataDalTorneo(tornei, lunediDi(oggi), 'forza')) {
+    id = 'forza';
+    motivo = 'Lunedì è saltato: oggi fai la scheda del lunedì (regola del programma).';
+  } else {
+    id = scheda.giornate.find((x) => x.giorno === dow)?.id ?? (dow === scheda.corsa.giorno ? 'corsa' : null);
   }
-  const g = scheda.giornate.find((x) => x.giorno === dow);
-  if (g) return { id: g.id, motivo: null };
-  if (dow === scheda.corsa.giorno) return { id: 'corsa', motivo: null };
-  return { id: null, motivo: dow === 2 ? 'Oggi riposo.' : 'Oggi c\'è tennis.' };
+  if (!id) return { id: null, motivo: dow === 2 ? 'Oggi riposo.' : 'Oggi c\'è tennis.' };
+
+  if (f?.fase === 'vigilia' && id !== 'spalle') {
+    const quando = f.mancano === 1 ? 'Domani inizia il torneo' : `Mancano ${f.mancano} giorni al torneo`;
+    return { id: null, torneo: true, alternativa: 'spalle',
+      motivo: `${quando}: oggi niente ${trovaGiornata(scheda, id).nome}.` };
+  }
+  if (f?.fase === 'vigilia') motivo = 'Vigilia del torneo: versione leggera (2 giri, 3-4 in riserva). Se preferisci, riposa.';
+  if (f?.fase === 'dopo') motivo = 'Secondo giorno dopo il torneo: riprendi solo se ti senti fresco, se no riposa ancora.';
+  return { id, motivo };
 }
 
 // ---------- Passi di un allenamento guidato ----------

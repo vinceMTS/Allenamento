@@ -11,6 +11,8 @@ function vuoti() {
     allenamenti: [],
     test: [],
     note: [],           // { id, data, creato, tipo: "nota" | "messaggio", testo }
+    tornei: [],         // { id, nome, inizio, fine, creato, finitoIl }
+    saltati: [],        // { id, data, creato, giornata, motivo }: allenamenti saltati, segnati a mano
     inCorso: null,
     ultimaEsportazione: null,
     schedaVista: null,
@@ -97,7 +99,8 @@ export function unisci(dati, importati) {
     for (const x of nuovi || []) if (!mappa.has(x.id)) mappa.set(x.id, x);
     return [...mappa.values()];
   };
-  const prima = dati.allenamenti.length + dati.test.length + dati.note.length;
+  const conta = (d) => d.allenamenti.length + d.test.length + d.note.length + d.tornei.length + d.saltati.length;
+  const prima = conta(dati);
   const risultato = {
     ...dati,
     impostazioni: { ...(importati.impostazioni || {}), ...pulite(dati.impostazioni) },
@@ -105,9 +108,10 @@ export function unisci(dati, importati) {
     allenamenti: perId(dati.allenamenti, importati.allenamenti),
     test: perId(dati.test, importati.test),
     note: perId(dati.note, importati.note),
+    tornei: perId(dati.tornei, importati.tornei),
+    saltati: perId(dati.saltati, importati.saltati),
   };
-  const dopo = risultato.allenamenti.length + risultato.test.length + risultato.note.length;
-  return { dati: risultato, aggiunti: dopo - prima };
+  return { dati: risultato, aggiunti: conta(risultato) - prima };
 }
 
 function pulite(imp) {

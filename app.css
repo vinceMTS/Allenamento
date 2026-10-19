@@ -249,3 +249,14 @@ a.voce em { color: var(--tenue); font-style: normal; font-size: 0.85rem; }
   transition: opacity .25s, transform .25s; max-width: calc(100% - 32px); text-align: center;
 }
 .toast.visibile { opacity: 1; transform: translate(-50%, 0); }
+
+/* Torneo e allenamenti saltati */
+button.punto { background: none; border: 0; color: inherit; font: inherit; padding: 0; cursor: pointer; }
+.punto.vuoto b { border-color: var(--avviso); color: var(--avviso); }
+.punto.saltato b { border-style: dashed; color: var(--tenue); }
+.punto.torneo b { border-color: var(--avviso); }
+.piano-torneo { padding-left: 18px; }
+.piano-torneo li { margin-bottom: 6px; }
+div.voce { cursor: default; justify-content: space-between; flex-wrap: wrap; }
+div.voce span { flex: 1; color: var(--tenue); }
+.carta .link { display: block; padding-left: 0; }
